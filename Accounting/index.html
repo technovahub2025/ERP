@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Accounting Dashboard</title>
+  <style>
+    body {font-family: Arial, sans-serif;margin: 0; padding: 0;background: #f4f6f9;}
+    header {background: #2c3e50;color: #fff;padding: 15px;text-align: center;font-size: 22px;font-weight: bold;}
+    .container {display: grid;grid-template-columns: 2fr 1fr;gap: 20px;padding: 20px;}
+    .card {background: #fff;padding: 15px;border-radius: 10px;box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+    table {width: 100%;border-collapse: collapse;margin-top: 10px;}
+    th, td {padding: 8px;border: 1px solid #ddd;text-align: center;}
+    th {background: #34495e;color: white;}
+    button {padding: 8px 12px;margin: 5px;border: none;border-radius: 5px;cursor: pointer;}
+    .btn-income {background: #27ae60; color: white;}
+    .btn-expense {background: #c0392b; color: white;}
+    .btn-delete {background: #e74c3c; color: white;}
+    .btn-edit {background: #f39c12; color: white;}
+    .btn-export {background: #2980b9; color: white;}
+    .btn-pdf {background: #8e44ad; color: white;}
+    .summary {display: flex;justify-content: space-around;margin-top: 10px;font-size: 18px;}
+    .modal {display: none;position: fixed;left: 0;top: 0;width: 100%;height: 100%;background: rgba(0,0,0,0.5);justify-content: center;align-items: center;}
+    .modal-content {background: #fff;padding: 20px;border-radius: 10px;width: 300px;}
+    canvas {width: 100% !important;max-height: 300px;}
+  </style>
+</head>
+<body>
+  <header> Accounting Dashboard</header>
+
+  <div class="container">
+    <!-- Left side: Transactions -->
+    <div class="card">
+      <h2>Transactions</h2>
+      <button class="btn-income" onclick="openModal('income')">+ Add Income</button>
+      <button class="btn-expense" onclick="openModal('expense')">- Add Expense</button>
+      <input type="file" id="importFile" accept=".xlsx,.xls" onchange="importExcel(event)">
+      <button class="btn-export" onclick="exportExcel()">⬇ Export Excel</button>
+      <button class="btn-pdf" onclick="downloadPDF()">⬇ Download PDF</button>
+
+      <table id="transactionTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="summary">
+        <div> Income: <span id="incomeTotal">0</span></div>
+        <div> Expense: <span id="expenseTotal">0</span></div>
+        <div> Balance: <span id="balanceTotal">0</span></div>
+      </div>
+    </div>
+
+    <!-- Right side: Chart + Invoice -->
+    <div class="card">
+      <h2>Overview</h2>
+      <canvas id="chart"></canvas>
+      <button onclick="generateInvoice()">🧾 Generate Invoice</button>
+      <div id="invoice" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- Transaction Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Add Transaction</h3>
+      <input type="date" id="date"><br><br>
+      <input type="text" id="desc" placeholder="Client"><br><br>
+      <input type="number" id="amount" placeholder="Amount"><br><br>
+      <button onclick="saveTransaction()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Chart.js + SheetJS + jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    let transactions = [
+      {date:"2025-08-01", desc:"Salary", type:"income", amount:5000},
+      {date:"2025-08-03", desc:"Groceries", type:"expense", amount:1200}
+    ];
+    let editIndex = null;
+    let modalType = "";
+
+    const tableBody = document.querySelector("#transactionTable tbody");
+    const incomeEl = document.getElementById("incomeTotal");
+    const expenseEl = document.getElementById("expenseTotal");
+    const balanceEl = document.getElementById("balanceTotal");
+
+    function renderTable(){
+      tableBody.innerHTML="";
+      let income=0, expense=0;
+      transactions.forEach((t,i)=>{
+        let row = `<tr>
+          <td>${t.date}</td>
+          <td>${t.desc}</td>
+          <td>${t.type}</td>
+          <td>${t.amount}</td>
+          <td>
+            <button class="btn-edit" onclick="editTransaction(${i})">Edit</button>
+            <button class="btn-delete" onclick="deleteTransaction(${i})">Delete</button>
+          </td>
+        </tr>`;
+        tableBody.innerHTML+=row;
+        if(t.type==="income") income+=t.amount; else expense+=t.amount;
+      });
+      incomeEl.innerText=income;
+      expenseEl.innerText=expense;
+      balanceEl.innerText=income-expense;
+      updateChart(income, expense);
+    }
+
+    function openModal(type){
+      modalType = type;
+      document.getElementById("modalTitle").innerText = type==="income"?"Add Income":"Add Expense";
+      document.getElementById("modal").style.display="flex";
+      editIndex=null;
+      document.getElementById("date").value="";
+      document.getElementById("desc").value="";
+      document.getElementById("amount").value="";
+    }
+
+    function closeModal(){document.getElementById("modal").style.display="none";}
+
+    function saveTransaction(){
+      let date=document.getElementById("date").value;
+      let desc=document.getElementById("desc").value;
+      let amount=+document.getElementById("amount").value;
+      if(editIndex!==null){
+        transactions[editIndex]={date,desc,type:modalType,amount};
+      } else {
+        transactions.push({date,desc,type:modalType,amount});
+      }
+      closeModal();
+      renderTable();
+    }
+
+    function editTransaction(i){
+      let t=transactions[i];
+      modalType=t.type;
+      editIndex=i;
+      document.getElementById("date").value=t.date;
+      document.getElementById("desc").value=t.desc;
+      document.getElementById("amount").value=t.amount;
+      document.getElementById("modal").style.display="flex";
+    }
+
+    function deleteTransaction(i){transactions.splice(i,1);renderTable();}
+
+    let chart;
+    function updateChart(income, expense){
+      if(chart) chart.destroy();
+      chart = new Chart(document.getElementById("chart"), {
+        type:"doughnut",
+        data:{labels:["Income","Expense"],datasets:[{data:[income,expense], backgroundColor:["#27ae60","#c0392b"]}]}
+      });
+    }
+
+    function generateInvoice(){
+      let html="<h3>Invoice</h3><table border='1' width='100%'><tr><th>Date</th><th>Client</th><th>Type</th><th>Amount</th></tr>";
+      transactions.forEach(t=>{
+        html+=`<tr><td>${t.date}</td><td>${t.desc}</td><td>${t.type}</td><td>${t.amount}</td></tr>`;
+      });
+      html+="</table>";
+      document.getElementById("invoice").innerHTML=html;
+    }
+
+    // ====== NEW FEATURES ======
+
+    // Import Excel
+    function importExcel(event){
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        rows.forEach(r=>{
+          transactions.push({
+            date:r.Date || "",
+            desc:r.Client || "",
+            type:(r.Type || "").toLowerCase(),
+            amount:+r.Amount || 0
+          });
+        });
+        renderTable();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Export Excel
+    function exportExcel(){
+      const ws = XLSX.utils.json_to_sheet(transactions);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+      XLSX.writeFile(wb, "transactions.xlsx");
+    }
+
+    // Download PDF
+    async function downloadPDF(){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Transaction Report", 14, 15);
+      doc.autoTable({
+        head: [['Date','Client','Type','Amount']],
+        body: transactions.map(t=>[t.date,t.desc,t.type,t.amount])
+      });
+      doc.save("transactions.pdf");
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>

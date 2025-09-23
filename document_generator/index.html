@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technovahub - Document Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        .document-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .document-container {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        /* Text wrapping and column widths */
+        .description-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+            min-width: 200px;
+        }
+        col.description-col {
+            width: 40%;
+        }
+        col.qty-col {
+            width: 8%;
+        }
+        col.price-col {
+            width: 12%;
+        }
+        col.discount-col {
+            width: 10%;
+        }
+        col.gst-col {
+            width: 15%;
+        }
+        col.amount-col {
+            width: 15%;
+        }
+        /* Textarea styling */
+        .item-desc {
+            resize: none;
+            min-height: 40px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white p-6 rounded-lg shadow-md mb-4 no-print">
+            <h1 class="text-2xl font-bold text-blue-700 mb-4">Document Generator</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Document Type</label>
+                    <select id="document-type" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                        <option value="invoice">Invoice</option>
+                        <option value="quotation">Quotation</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Document #</label>
+                    <input type="text" id="document-number" class="mt-1 block w-full border border-gray-300 rounded-md p-2" value="INV-001">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="document-date" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Client Name</label>
+                    <input type="text" id="client-name" class="mt-1 block w-full border border-gray-300 rounded-md p-2" value="Aroun Systems and Safety Equipments">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Client GSTIN</label>
+                    <input type="text" id="client-gst" class="mt-1 block w-full border border-gray-300 rounded-md p-2" value="34ADXPA0879K123">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700">Client Address</label>
+                    <textarea id="client-address" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md p-2">38.39 2ND CROSS STREET GREEN GARDEN</textarea>
+                </div>
+                <div id="due-date-field">
+                    <label class="block text-sm font-medium text-gray-700">Due Date</label>
+                    <input type="date" id="due-date" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                </div>
+                <div id="valid-until-field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Valid Until</label>
+                    <input type="date" id="valid-until" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                </div>
+            </div>
+            <button id="update-document" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Document</button>
+        </div>
+
+        <div class="document-container p-8" id="document">
+            <!-- Company Header -->
+            <div class="text-center mb-6">
+                <div class="flex justify-center mb-2">
+                    <img src="logo.jpg" alt="TECHNOVAHUB Logo" class="h-24">
+                </div>
+                 
+                <p class="text-sm text-gray-600">No.48, Lawspet Main Road, Pondicherry-605 008</p>
+                <p class="text-sm text-gray-600">Phone no.: 9360962810 | Email: technovahubcareer@gmail.com</p>
+                <p class="text-sm text-gray-600">GSTIN: 34ABWFA3431G1ZG | State: 34-Puducherry</p>
+            </div>
+
+            <!-- Document Title -->
+            <div class="text-center mb-8">
+                <h2 id="document-title" class="text-3xl font-bold text-blue-700 border-b-2 border-blue-200 pb-2 inline-block px-8">INVOICE</h2>
+            </div>
+
+            <!-- Document Info -->
+            <div class="flex justify-between mb-8">
+                <div class="w-1/2">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2" id="document-to-label">Invoice To:</h3>
+                    <p id="display-client-name" class="font-medium">Aroun Systems and Safety Equipments</p>
+                    <p id="display-client-gst" class="text-sm"></p>
+                    <p id="display-client-address" class="text-sm mt-1">38.39 2ND CROSS STREET GREEN GARDEN</p>
+                </div>
+                <div class="w-1/2">
+                    <table class="w-full border border-gray-200">
+                        <tr>
+                            <td class="p-2 border border-gray-200 font-semibold" id="document-number-label">Invoice #</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-document-number">INV-001</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 border border-gray-200 font-semibold">Date</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-document-date"></td>
+                        </tr>
+                        <tr id="due-date-row">
+                            <td class="p-2 border border-gray-200 font-semibold">Due Date</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-due-date"></td>
+                        </tr>
+                        <tr id="valid-until-row" class="hidden">
+                            <td class="p-2 border border-gray-200 font-semibold">Valid Until</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-valid-until"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <table class="w-full border border-gray-200 mb-4" id="items-table">
+                <colgroup>
+                    <col class="description-col">
+                    <col class="qty-col">
+                    <col class="price-col">
+                    <col class="discount-col">
+                    <col class="gst-col">
+                    <col class="amount-col">
+                </colgroup>
+                <thead>
+                    <tr class="bg-blue-600 text-white">
+                        <th class="p-2 border border-gray-200 text-left description-cell">Item Description</th>
+                        <th class="p-2 border border-gray-200 text-center">Qty</th>
+                        <th class="p-2 border border-gray-200 text-right">Price/Unit</th>
+                        <th class="p-2 border border-gray-200 text-right">Discount</th>
+                        <th class="p-2 border border-gray-200 text-right">GST (18%)</th>
+                        <th class="p-2 border border-gray-200 text-right">Amount</th>
+                        <th class="p-2 border border-gray-200 no-print">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Items will be added here -->
+                </tbody>
+            </table>
+
+            <div class="no-print mb-4">
+                <button id="add-item" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">Add Item</button>
+            </div>
+
+            <!-- Totals Section -->
+            <div class="flex justify-end">
+                <div class="w-64">
+                    <div class="flex justify-between py-1 border-b border-gray-200">
+                        <span class="font-semibold">Sub Total</span>
+                        <span id="sub-total">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-gray-200">
+                        <span class="font-semibold">Discount</span>
+                        <span id="total-discount">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-gray-200">
+                        <span class="font-semibold">CGST (9%)</span>
+                        <span id="cgst">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-gray-200">
+                        <span class="font-semibold">SGST (9%)</span>
+                        <span id="sgst">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b-2 border-blue-600 font-semibold">
+                        <span>Total</span>
+                        <span id="total">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="font-semibold">You Saved</span>
+                        <span id="you-saved">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amount in Words -->
+            <div class="mt-4 p-2 bg-blue-50 rounded">
+                <p class="text-sm font-semibold">Amount in Words:</p>
+                <p id="amount-in-words" class="text-sm italic">Zero Rupees Only</p>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold text-blue-700 mb-2">Terms and Conditions</h3>
+                <ul id="terms-list" class="list-disc pl-5 text-sm">
+                    <li>This is a computer generated invoice</li>
+                    <li>Please pay within the due date mentioned above</li>
+                </ul>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="mt-8 pt-4 border-t border-blue-200">
+                <h3 class="text-lg font-semibold text-blue-700 mb-2">Bank Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p><span class="font-semibold">Bank Name:</span> HDFC BANK 
+</p>
+                        <p><span class="font-semibold">Account No.:</span> 502 000 643 155 83 
+</p>
+                    </div>
+                    <div>
+                        <p><span class="font-semibold">IFSC Code:</span> HDFC0000407</p>
+                        <p><span class="font-semibold">Account Name:</span> AROUN SYSTEMS AND SAFETY EQUIPMENTS</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-12 text-center">
+                
+                <div class="mt-8">
+                    <p class="text-sm font-semibold">Authorized Signatory</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center no-print">
+            <button id="download-pdf" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Download PDF</button>
+            <button id="print-document" class="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Print Document</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('document-date').value = formattedDate;
+            document.getElementById('display-document-date').textContent = formatDate(today);
+            
+            // Set due date (15 days from today)
+            const dueDate = new Date();
+            dueDate.setDate(today.getDate() + 15);
+            const formattedDueDate = dueDate.toISOString().split('T')[0];
+            document.getElementById('due-date').value = formattedDueDate;
+            document.getElementById('display-due-date').textContent = formatDate(dueDate);
+            
+            // Set valid until (30 days from today)
+            const validUntil = new Date();
+            validUntil.setDate(today.getDate() + 30);
+            const formattedValidUntil = validUntil.toISOString().split('T')[0];
+            document.getElementById('valid-until').value = formattedValidUntil;
+            document.getElementById('display-valid-until').textContent = formatDate(validUntil);
+
+            // Add sample items
+            const sampleItems = [
+                { 
+                    description: "Web Hosting Server (Per Year) - Premium Package with 100GB SSD Storage, Unlimited Bandwidth, and Free SSL Certificate", 
+                    hsn: "", 
+                    qty: 1, 
+                    price: 3500, 
+                    discount: 0, 
+                    discountPercent: 0 
+                },
+                { 
+                    description: "SSL Certificate (Domain Validated) - 256-bit Encryption with Trust Seal", 
+                    hsn: "", 
+                    qty: 1, 
+                    price: 750, 
+                    discount: 0, 
+                    discountPercent: 0 
+                },
+                { 
+                    description: "Responsive Website Design using Bootstrap 5 - Custom Design with 5 Pages including Home, About, Services, Portfolio and Contact", 
+                    hsn: "", 
+                    qty: 1, 
+                    price: 20000, 
+                    discount: 8000, 
+                    discountPercent: 40 
+                }
+            ];
+
+            sampleItems.forEach(item => {
+                addItemRow(item);
+            });
+            calculateTotals();
+            
+            // Set up document type change handler
+            document.getElementById('document-type').addEventListener('change', function() {
+                updateDocumentType();
+            });
+        });
+
+        // Update document type (Invoice/Quotation)
+        function updateDocumentType() {
+            const docType = document.getElementById('document-type').value;
+            const isInvoice = docType === 'invoice';
+            
+            // Update labels and visibility
+            document.getElementById('document-title').textContent = isInvoice ? 'INVOICE' : 'QUOTATION';
+            document.getElementById('document-to-label').textContent = isInvoice ? 'Invoice To:' : 'Quotation For:';
+            document.getElementById('document-number-label').textContent = isInvoice ? 'Invoice #' : 'Quotation #';
+            
+            // Toggle due date/valid until fields
+            document.getElementById('due-date-field').classList.toggle('hidden', !isInvoice);
+            document.getElementById('valid-until-field').classList.toggle('hidden', isInvoice);
+            document.getElementById('due-date-row').classList.toggle('hidden', !isInvoice);
+            document.getElementById('valid-until-row').classList.toggle('hidden', isInvoice);
+            
+            // Update terms and conditions
+            const termsList = document.getElementById('terms-list');
+            termsList.innerHTML = '';
+            
+            if (isInvoice) {
+                termsList.innerHTML = `
+                    <li>This is a computer generated invoice</li>
+                    <li>Please pay within the due date mentioned above</li>
+                    
+                `;
+            } else {
+                termsList.innerHTML = `
+                    <li>This Quotation is valid for 30 days from the date of issue</li>
+                     <li>This is a Computer Generated Quotation</li>
+                    
+                    
+                     
+                `;
+            }
+            
+            // Update document number prefix
+            const currentNumber = document.getElementById('document-number').value;
+            const prefix = isInvoice ? 'INV-' : 'QT-';
+            if (!currentNumber.startsWith(prefix)) {
+                const numPart = currentNumber.replace(/^(INV-|QT-)/, '');
+                document.getElementById('document-number').value = prefix + numPart;
+                document.getElementById('display-document-number').textContent = prefix + numPart;
+            }
+        }
+
+        // Format date to DD-MM-YYYY
+        function formatDate(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) 
+                month = '0' + month;
+            if (day.length < 2) 
+                day = '0' + day;
+
+            return [day, month, year].join('-');
+        }
+
+        // Update document details
+        document.getElementById('update-document').addEventListener('click', function() {
+            document.getElementById('display-client-name').textContent = document.getElementById('client-name').value || 'Aroun Systems and Safety Equipments';
+            
+            document.getElementById('display-client-address').textContent = document.getElementById('client-address').value || '38.39 2ND CROSS STREET GREEN GARDEN';
+            document.getElementById('display-document-number').textContent = document.getElementById('document-number').value || 'INV-001';
+            
+            const docDate = document.getElementById('document-date').value;
+            if (docDate) {
+                document.getElementById('display-document-date').textContent = formatDate(new Date(docDate));
+            }
+            
+            const dueDate = document.getElementById('due-date').value;
+            if (dueDate) {
+                document.getElementById('display-due-date').textContent = formatDate(new Date(dueDate));
+            }
+            
+            const validUntil = document.getElementById('valid-until').value;
+            if (validUntil) {
+                document.getElementById('display-valid-until').textContent = formatDate(new Date(validUntil));
+            }
+        });
+
+        // Add new item row
+        document.getElementById('add-item').addEventListener('click', function() {
+            addItemRow();
+        });
+
+        function addItemRow(data = null) {
+            const tbody = document.querySelector('#items-table tbody');
+            const tr = document.createElement('tr');
+            tr.className = 'border border-gray-200 hover:bg-gray-50';
+            
+            tr.innerHTML = `
+                <td class="p-2 border border-gray-200 description-cell">
+                    <textarea class="item-desc w-full border-none bg-transparent whitespace-normal resize-none" rows="2">${data ? data.description : ''}</textarea>
+                </td>
+                <td class="p-2 border border-gray-200">
+                    <input type="number" class="item-qty w-full border-none bg-transparent text-center" value="${data ? data.qty : 1}" min="1">
+                </td>
+                <td class="p-2 border border-gray-200">
+                    <input type="number" class="item-price w-full border-none bg-transparent text-right" value="${data ? data.price.toFixed(2) : '0.00'}" min="0" step="0.01">
+                </td>
+                <td class="p-2 border border-gray-200">
+                    <div class="flex items-center justify-end">
+                        <input type="number" class="item-discount-amt w-16 border-none bg-transparent text-right" value="${data ? data.discount.toFixed(2) : '0.00'}" min="0" step="0.01">
+                        <span class="text-xs ml-1">(${data ? data.discountPercent : 0}%)</span>
+                    </div>
+                </td>
+                <td class="p-2 border border-gray-200 text-right item-gst">₹0.00</td>
+                <td class="p-2 border border-gray-200 text-right item-amount">₹0.00</td>
+                <td class="p-2 border border-gray-200 text-center no-print">
+                    <button class="text-red-500 delete-item">×</button>
+                </td>
+            `;
+            
+            tbody.appendChild(tr);
+            
+            // Add event listeners
+            const qtyInput = tr.querySelector('.item-qty');
+            const priceInput = tr.querySelector('.item-price');
+            const discountInput = tr.querySelector('.item-discount-amt');
+            const descTextarea = tr.querySelector('.item-desc');
+            
+            // Auto-resize textarea
+            descTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                calculateRow(tr);
+            });
+            
+            [qtyInput, priceInput, discountInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    calculateRow(tr);
+                    calculateTotals();
+                });
+            });
+            
+            tr.querySelector('.delete-item').addEventListener('click', function() {
+                tr.remove();
+                calculateTotals();
+            });
+            
+            // Calculate initial row if data provided
+            if (data) {
+                calculateRow(tr);
+                descTextarea.dispatchEvent(new Event('input'));
+            }
+        }
+
+        // Calculate row totals
+        function calculateRow(row) {
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const discount = parseFloat(row.querySelector('.item-discount-amt').value) || 0;
+            
+            const subtotal = qty * price;
+            const taxable = subtotal - discount;
+            const gst = taxable * 0.0;
+            const amount = taxable + gst;
+            
+            // Update discount percentage
+            const discountPercent = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
+            row.querySelector('.item-discount-amt + span').textContent = `(${discountPercent}%)`;
+            
+            // Update displayed values
+            row.querySelector('.item-gst').textContent = '₹' + gst.toFixed(2);
+            row.querySelector('.item-amount').textContent = '₹' + amount.toFixed(2);
+        }
+
+        // Calculate all totals
+        function calculateTotals() {
+            const rows = document.querySelectorAll('#items-table tbody tr');
+            let subTotal = 0;
+            let totalDiscount = 0;
+            let totalGst = 0;
+            let total = 0;
+            
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                const discount = parseFloat(row.querySelector('.item-discount-amt').value) || 0;
+                
+                const rowSubtotal = qty * price;
+                const taxable = rowSubtotal - discount;
+                const rowGst = taxable * 0.0;
+                const rowTotal = taxable + rowGst;
+                
+                subTotal += rowSubtotal;
+                totalDiscount += discount;
+                totalGst += rowGst;
+                total += rowTotal;
+            });
+            
+            // Update totals display
+            document.getElementById('sub-total').textContent = '₹' + subTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('total-discount').textContent = '₹' + totalDiscount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('cgst').textContent = '₹' + (totalGst / 2).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('sgst').textContent = '₹' + (totalGst / 2).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('total').textContent = '₹' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('you-saved').textContent = '₹' + (subTotal - total + totalGst).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            
+            // Update amount in words
+            document.getElementById('amount-in-words').textContent = numberToWords(total) + ' Rupees Only';
+        }
+
+        // Number to words conversion
+        function numberToWords(num) {
+            const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            
+            num = Math.floor(num);
+            if (num === 0) return 'Zero';
+            
+            let words = '';
+            
+            if (num >= 10000000) {
+                words += numberToWords(Math.floor(num / 10000000)) + ' Crore ';
+                num %= 10000000;
+            }
+            
+            if (num >= 100000) {
+                words += numberToWords(Math.floor(num / 100000)) + ' Lakh ';
+                num %= 100000;
+            }
+            
+            if (num >= 1000) {
+                words += numberToWords(Math.floor(num / 1000)) + ' Thousand ';
+                num %= 1000;
+            }
+            
+            if (num >= 100) {
+                words += numberToWords(Math.floor(num / 100)) + ' Hundred ';
+                num %= 100;
+            }
+            
+            if (num > 0) {
+                if (words !== '') words += 'and ';
+                
+                if (num < 10) {
+                    words += units[num];
+                } else if (num < 20) {
+                    words += teens[num - 10];
+                } else {
+                    words += tens[Math.floor(num / 10)];
+                    if (num % 10 !== 0) {
+                        words += ' ' + units[num % 10];
+                    }
+                }
+            }
+            
+            return words.trim();
+        }
+
+        // Print document
+        document.getElementById('print-document').addEventListener('click', function() {
+            window.print();
+        });
+
+        // Download as PDF
+        document.getElementById('download-pdf').addEventListener('click', function() {
+            const element = document.getElementById('document');
+            const buttons = document.querySelectorAll('.no-print');
+            
+            // Hide buttons before capturing
+            buttons.forEach(btn => btn.style.display = 'none');
+            
+            // Set options for html2canvas
+             
+            const opt = {
+    scale: 2,
+    logging: false,
+    useCORS: true,
+    allowTaint: true,
+    letterRendering: true,
+    width: element.offsetWidth,
+    windowWidth: element.scrollWidth,
+    height: element.scrollHeight,
+    ignoreElements: function(element) {
+        // Ignore browser UI elements
+        return element.id === 'tab-bar' || element.className.includes('browser-chrome');
+    },
+    onclone: function(clonedDoc) {
+        // Remove any browser UI elements from the cloned document
+        const unwantedElements = clonedDoc.querySelectorAll('title, meta, link, script, style');
+        unwantedElements.forEach(el => el.remove());
+    }
+};
+
+            // Create a promise to ensure all fonts are loaded
+            const fontLoadPromise = document.fonts ? document.fonts.ready : Promise.resolve();
+            
+            fontLoadPromise.then(() => {
+                return html2canvas(element, opt);
+            }).then(canvas => {
+                // Show buttons again
+                buttons.forEach(btn => btn.style.display = '');
+                
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // Calculate image dimensions to fit A4
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Add first page
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                
+                // Add additional pages if content is too long
+                let heightLeft = imgHeight;
+                let position = 0;
+                const imgHeightOnPage = imgHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeightOnPage;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                const docType = document.getElementById('document-type').value;
+                const docNumber = document.getElementById('display-document-number').textContent || 'document';
+                pdf.save(`${docType}-${docNumber}.pdf`);
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
+                buttons.forEach(btn => btn.style.display = '');
+            });
+        });
+    </script>
+    <style>
+@media print {
+    @page {
+        margin: 0;
+        size: auto;
+    }
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    /* Hide browser UI elements */
+    header, footer, title, address {
+        display: none !important;
+    }
+}</style>
+</body>
+</html>
