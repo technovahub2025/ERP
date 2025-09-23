@@ -1,0 +1,183 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Sales Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <script>
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    window.location.href = 'login.html'; // redirect if not logged in
+  }
+});
+</script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      padding: 20px 10px 10px;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+    }
+    #controls select, #controls button, #controls input[type="file"] {
+      padding: 8px;
+      font-size: 14px;
+    }
+    .dark-mode {
+      background-color: #1e1e1e;
+      color: #ddd;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .chart-container {
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .dark-mode .chart-container {
+      background-color: #2b2b2b;
+    }
+    .kpi-cards {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 10px 20px;
+    }
+    .kpi-card {
+      background: #fff;
+      padding: 15px 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      min-width: 120px;
+      text-align: center;
+    }
+    .dark-mode .kpi-card {
+      background: #2b2b2b;
+    }
+  </style>
+</head>
+<body>
+  <h1>Interactive Sales Performance Dashboard</h1>
+
+  <div id="controls">
+    <input type="file" id="fileInput" accept="application/json" />
+    <select id="countryFilter"><option value="All">All Countries</option></select>
+    <select id="productLineFilter"><option value="All">All Product Lines</option></select>
+    <button id="toggleDarkMode">Toggle Dark Mode</button>
+    <button onclick="exportDashboard()">Export All Charts</button>
+  </div>
+
+  <div class="kpi-cards" id="kpis"></div>
+
+  <div class="dashboard" id="dashboard">
+    <div class="chart-container" id="salesOverTime"></div>
+    <div class="chart-container" id="salesByProductLine"></div>
+    <div class="chart-container" id="dealSizeDist"></div>
+    <div class="chart-container" id="salesByCountry"></div>
+    <div class="chart-container" id="daysSinceLastOrder"></div>
+  </div>
+
+  <script>
+    let rawData = [];
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const data = JSON.parse(event.target.result);
+          rawData = Array.isArray(data) ? data : [data];
+          populateFilters(rawData);
+          render(rawData);
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    function populateFilters(data) {
+      const countries = [...new Set(data.map(d => d.COUNTRY))];
+      const products = [...new Set(data.map(d => d.PRODUCTLINE))];
+      const countrySelect = document.getElementById('countryFilter');
+      const productSelect = document.getElementById('productLineFilter');
+      countrySelect.innerHTML = '<option value="All">All Countries</option>' + countries.map(c => `<option>${c}</option>`).join('');
+      productSelect.innerHTML = '<option value="All">All Product Lines</option>' + products.map(p => `<option>${p}</option>`).join('');
+    }
+
+    document.getElementById('countryFilter').addEventListener('change', () => render(rawData));
+    document.getElementById('productLineFilter').addEventListener('change', () => render(rawData));
+
+    document.getElementById('toggleDarkMode').addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+    });
+
+    function render(data) {
+      const country = document.getElementById('countryFilter').value;
+      const product = document.getElementById('productLineFilter').value;
+      const filtered = data.filter(d =>
+        (country === 'All' || d.COUNTRY === country) &&
+        (product === 'All' || d.PRODUCTLINE === product)
+      );
+
+      filtered.forEach(d => d.ORDERDATE = new Date(d.ORDERDATE.split('-').reverse().join('-')));
+
+      const salesOverTimeMap = {};
+      filtered.forEach(d => {
+        const key = d.ORDERDATE.toISOString().slice(0, 7);
+        salesOverTimeMap[key] = (salesOverTimeMap[key] || 0) + d.SALES;
+      });
+      const salesOverTime = Object.entries(salesOverTimeMap);
+      Plotly.newPlot('salesOverTime', [{ x: salesOverTime.map(e => e[0]), y: salesOverTime.map(e => e[1]), type: 'scatter', mode: 'lines+markers', marker: { color: 'blue' }}], { title: 'Total Sales Over Time', xaxis: { title: 'Month' }, yaxis: { title: 'Sales' } });
+
+      const productLineMap = {};
+      filtered.forEach(d => productLineMap[d.PRODUCTLINE] = (productLineMap[d.PRODUCTLINE] || 0) + d.SALES);
+      Plotly.newPlot('salesByProductLine', [{ labels: Object.keys(productLineMap), values: Object.values(productLineMap), type: 'pie' }], { title: 'Sales by Product Line' });
+
+      const dealSizeMap = {};
+      filtered.forEach(d => dealSizeMap[d.DEALSIZE] = (dealSizeMap[d.DEALSIZE] || 0) + 1);
+      Plotly.newPlot('dealSizeDist', [{ labels: Object.keys(dealSizeMap), values: Object.values(dealSizeMap), type: 'pie' }], { title: 'Deal Size Distribution' });
+
+      const countryMap = {};
+      filtered.forEach(d => countryMap[d.COUNTRY] = (countryMap[d.COUNTRY] || 0) + d.SALES);
+      Plotly.newPlot('salesByCountry', [{ x: Object.keys(countryMap), y: Object.values(countryMap), type: 'bar', marker: { color: 'green' }}], { title: 'Sales by Country', xaxis: { title: 'Country' }, yaxis: { title: 'Sales' } });
+
+      Plotly.newPlot('daysSinceLastOrder', [{ x: filtered.map(d => d.DAYS_SINCE_LASTORDER), type: 'histogram', marker: { color: 'orange' }}], { title: 'Days Since Last Order Distribution', xaxis: { title: 'Days' }, yaxis: { title: 'Frequency' } });
+
+      const kpiContainer = document.getElementById('kpis');
+      const totalSales = filtered.reduce((sum, d) => sum + d.SALES, 0);
+      const avgOrder = (totalSales / filtered.length).toFixed(2);
+      const totalOrders = filtered.length;
+      kpiContainer.innerHTML = `
+        <div class="kpi-card"><strong>Total Sales</strong><br>$${totalSales.toFixed(2)}</div>
+        <div class="kpi-card"><strong>Avg Order</strong><br>$${avgOrder}</div>
+        <div class="kpi-card"><strong>Total Orders</strong><br>${totalOrders}</div>
+      `;
+    }
+
+    function exportDashboard() {
+      const ids = ['salesOverTime', 'salesByProductLine', 'dealSizeDist', 'salesByCountry', 'daysSinceLastOrder'];
+      ids.forEach(id => {
+        Plotly.downloadImage(id, {format: 'png', filename: id});
+      });
+    }
+  </script>
+</body>
+</html>

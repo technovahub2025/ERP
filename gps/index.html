@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media (max-width: 640px) {
+            .responsive-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Employee Attendance System</h1>
+            <p class="text-gray-600">GPS-enabled clock in/out tracking</p>
+        </div>
+
+        <!-- Employee Details Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <div class="text-blue-500 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                </div>
+                Employee Details
+            </h2>
+            
+            <form id="employee-form" class="w-full">
+                <table class="w-full">
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 pr-4">
+                            <label for="employee-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        </td>
+                        <td class="py-3">
+                            <input type="text" id="employee-name" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </td>
+                    </tr>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 pr-4">
+                            <label for="employee-id" class="block text-sm font-medium text-gray-700">Employee ID</label>
+                        </td>
+                        <td class="py-3">
+                            <input type="text" id="employee-id" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </td>
+                    </tr>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3 pr-4">
+                            <label for="employee-phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        </td>
+                        <td class="py-3">
+                            <input type="tel" id="employee-phone" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="pt-4 text-center">
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Save Details
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+
+        <!-- Attendance Status -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-center mb-4">
+                <div class="text-blue-500 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold">Attendance Status</h2>
+            </div>
+            
+            <div class="space-y-3 mb-4">
+                <div id="employee-details" class="text-gray-700">Employee: Not specified</div>
+                <div id="status-message" class="font-medium">Please clock in/out below</div>
+                <div id="location-info" class="text-sm text-gray-600">Location: Not available</div>
+                <div id="time-info" class="text-sm text-gray-600">Time: --:--:--</div>
+                <div id="date-info" class="text-sm text-gray-600">Date: --/--/----</div>
+            </div>
+            
+            <div class="flex justify-center space-x-4">
+                <button id="clock-in-btn" class="px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    CLOCK IN
+                </button>
+                <button id="clock-out-btn" class="px-6 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    CLOCK OUT
+                </button>
+            </div>
+        </div>
+
+        <!-- Attendance History -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                    <div class="text-blue-500 mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold">Attendance History</h2>
+                </div>
+                <button id="download-btn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Download History
+                </button>
+            </div>
+            
+            <div class="responsive-table">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Date</th>
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Name</th>
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Employee ID</th>
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Clock In</th>
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Clock Out</th>
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Location</th>
+                            <th class="p-3 text-left text-sm font-medium text-gray-700">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-body" class="divide-y divide-gray-200">
+                        <!-- Records will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const employeeForm = document.getElementById('employee-form');
+            const employeeNameInput = document.getElementById('employee-name');
+            const employeeIdInput = document.getElementById('employee-id');
+            const employeePhoneInput = document.getElementById('employee-phone');
+            const employeeDetailsDisplay = document.getElementById('employee-details');
+            const clockInBtn = document.getElementById('clock-in-btn');
+            const clockOutBtn = document.getElementById('clock-out-btn');
+            const statusMessage = document.getElementById('status-message');
+            const locationInfo = document.getElementById('location-info');
+            const timeInfo = document.getElementById('time-info');
+            const dateInfo = document.getElementById('date-info');
+            const attendanceBody = document.getElementById('attendance-body');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            // Employee data
+            let currentEmployee = {
+                name: '',
+                id: '',
+                phone: ''
+            };
+            
+            // Variables to store current position and status
+            let currentPosition = null;
+            let currentStatus = null; // 'in' or 'out'
+            
+            // Initialize the app
+            init();
+            
+            function init() {
+                updateDateTime();
+                setInterval(updateDateTime, 1000);
+                
+                // Load saved employee data if exists
+                loadEmployeeData();
+                
+                // Set up event listeners
+                employeeForm.addEventListener('submit', saveEmployeeData);
+                clockInBtn.addEventListener('click', handleClockIn);
+                clockOutBtn.addEventListener('click', handleClockOut);
+                downloadBtn.addEventListener('click', downloadHistory);
+                
+                // Get current location
+                getLocation();
+                
+                // Load attendance history
+                loadAttendanceHistory();
+            }
+            
+            function updateDateTime() {
+                const now = new Date();
+                timeInfo.textContent = `Time: ${now.toLocaleTimeString()}`;
+                dateInfo.textContent = `Date: ${now.toLocaleDateString()}`;
+            }
+            
+            function getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            currentPosition = position;
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            locationInfo.textContent = `Location: Lat ${lat.toFixed(4)}, Lng ${lng.toFixed(4)}`;
+                        },
+                        error => {
+                            console.error("Error getting location:", error);
+                            locationInfo.textContent = "Location: Permission denied or not available";
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    locationInfo.textContent = "Location: Geolocation is not supported by this browser";
+                }
+            }
+            
+            function saveEmployeeData(e) {
+                e.preventDefault();
+                
+                currentEmployee = {
+                    name: employeeNameInput.value.trim(),
+                    id: employeeIdInput.value.trim(),
+                    phone: employeePhoneInput.value.trim()
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('currentEmployee', JSON.stringify(currentEmployee));
+                
+                // Update display
+                employeeDetailsDisplay.textContent = `Employee: ${currentEmployee.name} (ID: ${currentEmployee.id})`;
+                
+                // Show success message
+                const originalText = employeeForm.querySelector('button[type="submit"]').textContent;
+                const submitBtn = employeeForm.querySelector('button[type="submit"]');
+                submitBtn.textContent = "Saved!";
+                submitBtn.classList.remove('bg-blue-500');
+                submitBtn.classList.add('bg-green-500');
+                
+                setTimeout(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.classList.remove('bg-green-500');
+                    submitBtn.classList.add('bg-blue-500');
+                }, 2000);
+            }
+            
+            function loadEmployeeData() {
+                const savedEmployee = JSON.parse(localStorage.getItem('currentEmployee'));
+                if (savedEmployee) {
+                    currentEmployee = savedEmployee;
+                    employeeNameInput.value = currentEmployee.name;
+                    employeeIdInput.value = currentEmployee.id;
+                    employeePhoneInput.value = currentEmployee.phone;
+                    employeeDetailsDisplay.textContent = `Employee: ${currentEmployee.name} (ID: ${currentEmployee.id})`;
+                }
+            }
+            
+            function handleClockIn() {
+                if (!validateEmployee()) return;
+                if (!currentPosition) {
+                    alert("Please enable location services to clock in");
+                    return;
+                }
+                
+                const now = new Date();
+                const record = {
+                    date: now.toLocaleDateString(),
+                    name: currentEmployee.name,
+                    id: currentEmployee.id,
+                    timeIn: now.toLocaleTimeString(),
+                    timeOut: '',
+                    location: `Lat ${currentPosition.coords.latitude.toFixed(4)}, Lng ${currentPosition.coords.longitude.toFixed(4)}`,
+                    status: 'Present'
+                };
+                
+                currentStatus = 'in';
+                statusMessage.textContent = "You are currently CLOCKED IN";
+                statusMessage.className = "font-medium text-green-600";
+                
+                // Save to local storage
+                saveAttendanceRecord(record);
+                
+                // Update the table
+                addRecordToTable(record);
+                
+                // Visual feedback
+                clockInBtn.classList.add('bg-green-600');
+                setTimeout(() => clockInBtn.classList.remove('bg-green-600'), 300);
+            }
+            
+            function handleClockOut() {
+                if (!validateEmployee()) return;
+                if (!currentPosition || currentStatus !== 'in') {
+                    alert("You must be clocked in to clock out");
+                    return;
+                }
+                
+                const now = new Date();
+                const record = {
+                    date: now.toLocaleDateString(),
+                    name: currentEmployee.name,
+                    id: currentEmployee.id,
+                    timeIn: '',
+                    timeOut: now.toLocaleTimeString(),
+                    location: `Lat ${currentPosition.coords.latitude.toFixed(4)}, Lng ${currentPosition.coords.longitude.toFixed(4)}`,
+                    status: 'Completed'
+                };
+                
+                currentStatus = 'out';
+                statusMessage.textContent = "You are currently CLOCKED OUT";
+                statusMessage.className = "font-medium text-red-600";
+                
+                // Save to local storage
+                saveAttendanceRecord(record);
+                
+                // Update the table
+                addRecordToTable(record);
+                
+                // Visual feedback
+                clockOutBtn.classList.add('bg-red-600');
+                setTimeout(() => clockOutBtn.classList.remove('bg-red-600'), 300);
+            }
+            
+            function validateEmployee() {
+                if (!currentEmployee.name || !currentEmployee.id || !currentEmployee.phone) {
+                    alert("Please save your employee details first");
+                    return false;
+                }
+                return true;
+            }
+            
+            function saveAttendanceRecord(record) {
+                let records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                records.push(record);
+                localStorage.setItem('attendanceRecords', JSON.stringify(records));
+            }
+            
+            function loadAttendanceHistory() {
+                const records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                
+                // Clear existing table rows
+                attendanceBody.innerHTML = '';
+                
+                // Filter records for current employee if needed
+                const employeeRecords = records.filter(record => 
+                    currentEmployee.id && record.id === currentEmployee.id
+                );
+                
+                // Add to table in reverse chronological order
+                (employeeRecords.length > 0 ? employeeRecords : records).reverse().forEach(record => {
+                    addRecordToTable(record);
+                });
+            }
+            
+            function addRecordToTable(record) {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-50";
+                
+                row.innerHTML = `
+                    <td class="p-3 text-sm text-gray-700">${record.date}</td>
+                    <td class="p-3 text-sm text-gray-700">${record.name || '--'}</td>
+                    <td class="p-3 text-sm text-gray-700">${record.id || '--'}</td>
+                    <td class="p-3 text-sm text-gray-700">${record.timeIn || '--'}</td>
+                    <td class="p-3 text-sm text-gray-700">${record.timeOut || '--'}</td>
+                    <td class="p-3 text-sm text-gray-700">${record.location}</td>
+                    <td class="p-3 text-sm ${
+                        record.status === 'Present' ? 'text-green-600' : 'text-blue-600'
+                    }">${record.status}</td>
+                `;
+                
+                attendanceBody.prepend(row);
+            }
+            
+            function downloadHistory() {
+                if (!validateEmployee()) return;
+                
+                const records = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+                
+                // Filter records for current employee
+                const employeeRecords = records.filter(record => 
+                    record.id === currentEmployee.id
+                );
+                
+                if (employeeRecords.length === 0) {
+                    alert("No attendance records found for this employee");
+                    return;
+                }
+                
+                // Convert to CSV
+                let csv = 'Date,Employee Name,Employee ID,Clock In,Clock Out,Location,Status\n';
+                
+                employeeRecords.forEach(record => {
+                    csv += `"${record.date}","${record.name}","${record.id}","${record.timeIn || ''}","${record.timeOut || ''}","${record.location}","${record.status}"\n`;
+                });
+                
+                // Create download link
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `attendance_${currentEmployee.name}_${currentEmployee.id}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Visual feedback
+                downloadBtn.classList.add('bg-blue-600');
+                setTimeout(() => downloadBtn.classList.remove('bg-blue-600'), 300);
+            }
+        });
+    </script>
+</body>
+</html>

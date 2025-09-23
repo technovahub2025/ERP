@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Slip Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        .salary-slip-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .salary-slip-container {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        /* Ensure text wraps properly */
+        .description-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Input Form -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-4 no-print">
+            <h1 class="text-2xl font-bold text-blue-700 mb-4">Salary Slip Generator</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Employee Name</label>
+                    <input type="text" id="employee-name" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Sakthi">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Employee ID</label>
+                    <input type="text" id="employee-id" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="EMP001">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Designation</label>
+                    <input type="text" id="employee-designation" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Software Engineer">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Month & Year</label>
+                    <input type="month" id="salary-month" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Payroll Period</label>
+                    <input type="text" id="payroll-period" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="01-07-2025 to 31-07-2025">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Work Location</label>
+                    <input type="text" id="work-location" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Pondicherry">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Work Type</label>
+                    <input type="text" id="work-type" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="Full Time">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Bank A/C No.</label>
+                    <input type="text" id="bank-account" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="1234567890">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Basic Salary (₹)</label>
+                    <input type="number" id="basic-salary" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="30000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Housing Allowance (₹)</label>
+                    <input type="number" id="housing-allowance" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="12000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Transportation (₹)</label>
+                    <input type="number" id="transportation" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="3000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Performance Bonus (₹)</label>
+                    <input type="number" id="performance-bonus" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="5000">
+                </div>
+            </div>
+            
+            <button id="generate-slip" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Generate Salary Slip</button>
+        </div>
+
+        <!-- Salary Slip Output -->
+        <div class="salary-slip-container p-8" id="salary-slip">
+            <!-- Company Header -->
+            <div class="text-center mb-6">
+                <div class="flex justify-center mb-2">
+                    <img src="logo.jpg" alt="TECHNOVAHUB Logo" class="h-24">
+                </div>
+                 
+                <p class="text-sm text-gray-600">No.48, Lawspet Main Road, Pondicherry-605 008</p>
+                <p class="text-sm text-gray-600">Phone: 9360962810 | Email: technovahubcareer@gmail.com</p>
+            </div>
+
+            <!-- Salary Slip Title -->
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-blue-700 border-b-2 border-blue-200 pb-2 inline-block px-8">SALARY SLIP</h2>
+            </div>
+
+            <!-- Employee Details -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Month:</span> <span id="display-month">July 2025</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Employee Name:</span> <span id="display-employee-name">Sakthi</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Employee ID:</span> <span id="display-employee-id">EMP001</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Designation:</span> <span id="display-employee-designation">Software Engineer</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Payroll Period:</span> <span id="display-payroll-period">01-07-2025 to 31-07-2025</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Work Location:</span> <span id="display-work-location">Pondicherry</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Work Type:</span> <span id="display-work-type">Full Time</span></p>
+                </div>
+                <div>
+                    <p class="text-sm"><span class="font-semibold">Bank A/C No.:</span> <span id="display-bank-account">1234567890</span></p>
+                </div>
+            </div>
+
+            <!-- Earnings -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-blue-700 mb-2">Earnings</h3>
+                <table class="w-full border border-gray-200">
+                    <thead>
+                        <tr class="bg-blue-600 text-white">
+                            <th class="p-2 border border-gray-200 text-left">Description</th>
+                            <th class="p-2 border border-gray-200 text-right">Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="p-2 border border-gray-200">Basic Salary</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-basic-salary">30,000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 border border-gray-200">Housing Allowance</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-housing-allowance">12,000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 border border-gray-200">Transportation</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-transportation">3,000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 border border-gray-200">Performance Bonus</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-performance-bonus">5,000.00</td>
+                        </tr>
+                        <tr class="font-semibold">
+                            <td class="p-2 border border-gray-200">Gross Earnings</td>
+                            <td class="p-2 border border-gray-200 text-right" id="display-total-earnings">50,000.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Net Salary -->
+            <div class="flex justify-end mb-6">
+                <div class="w-64">
+                    <div class="flex justify-between py-2 border-b-2 border-blue-600 font-semibold">
+                        <span>Net Salary Payable</span>
+                        <span id="display-net-salary">₹50,000.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amount in Words -->
+            <div class="mt-4 p-2 bg-blue-50 rounded">
+                <p class="text-sm font-semibold">Amount in Words:</p>
+                <p id="amount-in-words" class="text-sm italic">Fifty Thousand Rupees Only</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-12 pt-4 border-t border-blue-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Employee Signature</p>
+                        <div class="mt-8 border-t border-gray-300 w-32"></div>
+                    </div>
+                    <div class="text-right">
+                        <div class="mt-8">
+                            <p class="text-sm font-semibold">Authorized Signatory</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-4 text-center no-print">
+            <button id="download-pdf" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Download PDF</button>
+            <button id="print-slip" class="ml-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Print Slip</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            
+            // Set current month as default
+            const currentMonth = today.toISOString().slice(0, 7);
+            document.getElementById('salary-month').value = currentMonth;
+            updateMonthDisplay(currentMonth);
+            
+            // Set default payroll period (1st to last day of current month)
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            document.getElementById('payroll-period').value = 
+                `${formatDate(firstDay)} to ${formatDate(lastDay)}`;
+            
+            // Generate sample slip on load
+            generateSlip();
+        });
+
+        // Format date to DD-MM-YYYY
+        function formatDate(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+
+            if (month.length < 2) 
+                month = '0' + month;
+            if (day.length < 2) 
+                day = '0' + day;
+
+            return [day, month, year].join('-');
+        }
+
+        // Format month to Month YYYY
+        function updateMonthDisplay(monthValue) {
+            const [year, month] = monthValue.split('-');
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                              "July", "August", "September", "October", "November", "December"];
+            document.getElementById('display-month').textContent = 
+                `${monthNames[parseInt(month) - 1]} ${year}`;
+        }
+
+        // Generate salary slip
+        document.getElementById('generate-slip').addEventListener('click', generateSlip);
+        document.getElementById('salary-month').addEventListener('change', function() {
+            updateMonthDisplay(this.value);
+        });
+
+        function generateSlip() {
+            // Employee details
+            document.getElementById('display-employee-name').textContent = 
+                document.getElementById('employee-name').value || 'Sakthi';
+            document.getElementById('display-employee-id').textContent = 
+                document.getElementById('employee-id').value || 'EMP001';
+            document.getElementById('display-employee-designation').textContent = 
+                document.getElementById('employee-designation').value || 'Software Engineer';
+            
+            // Update month display
+            updateMonthDisplay(document.getElementById('salary-month').value);
+            
+            // Additional fields
+            document.getElementById('display-payroll-period').textContent = 
+                document.getElementById('payroll-period').value || '01-07-2025 to 31-07-2025';
+            document.getElementById('display-work-location').textContent = 
+                document.getElementById('work-location').value || 'Pondicherry';
+            document.getElementById('display-work-type').textContent = 
+                document.getElementById('work-type').value || 'Full Time';
+            document.getElementById('display-bank-account').textContent = 
+                document.getElementById('bank-account').value || '1234567890';
+            
+            // Get salary components
+            const basicSalary = parseFloat(document.getElementById('basic-salary').value) || 0;
+            const housingAllowance = parseFloat(document.getElementById('housing-allowance').value) || 0;
+            const transportation = parseFloat(document.getElementById('transportation').value) || 0;
+            const performanceBonus = parseFloat(document.getElementById('performance-bonus').value) || 0;
+            
+            // Calculate totals
+            const totalEarnings = basicSalary + housingAllowance + transportation + performanceBonus;
+            
+            // Update display (INR format)
+            document.getElementById('display-basic-salary').textContent = basicSalary.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('display-housing-allowance').textContent = housingAllowance.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('display-transportation').textContent = transportation.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('display-performance-bonus').textContent = performanceBonus.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('display-total-earnings').textContent = totalEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            
+            document.getElementById('display-net-salary').textContent = '₹' + totalEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('amount-in-words').textContent = numberToWords(totalEarnings) + ' Rupees Only';
+        }
+
+        // Number to words conversion
+        function numberToWords(num) {
+            const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            
+            num = Math.floor(num);
+            if (num === 0) return 'Zero';
+            
+            let words = '';
+            
+            if (num >= 10000000) {
+                words += numberToWords(Math.floor(num / 10000000)) + ' Crore ';
+                num %= 10000000;
+            }
+            
+            if (num >= 100000) {
+                words += numberToWords(Math.floor(num / 100000)) + ' Lakh ';
+                num %= 100000;
+            }
+            
+            if (num >= 1000) {
+                words += numberToWords(Math.floor(num / 1000)) + ' Thousand ';
+                num %= 1000;
+            }
+            
+            if (num >= 100) {
+                words += numberToWords(Math.floor(num / 100)) + ' Hundred ';
+                num %= 100;
+            }
+            
+            if (num > 0) {
+                if (words !== '') words += 'and ';
+                
+                if (num < 10) {
+                    words += units[num];
+                } else if (num < 20) {
+                    words += teens[num - 10];
+                } else {
+                    words += tens[Math.floor(num / 10)];
+                    if (num % 10 !== 0) {
+                        words += ' ' + units[num % 10];
+                    }
+                }
+            }
+            
+            return words.trim();
+        }
+
+        // Print salary slip
+        document.getElementById('print-slip').addEventListener('click', function() {
+            window.print();
+        });
+
+        // Download as PDF
+        document.getElementById('download-pdf').addEventListener('click', function() {
+            const element = document.getElementById('salary-slip');
+            const buttons = document.querySelectorAll('.no-print');
+            
+            // Hide buttons before capturing
+            buttons.forEach(btn => btn.style.display = 'none');
+            
+            // Set options for html2canvas
+            const opt = {
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                allowTaint: true,
+                letterRendering: true,
+                width: element.offsetWidth,
+                windowWidth: element.scrollWidth,
+                height: element.scrollHeight,
+                ignoreElements: function(element) {
+                    return element.classList.contains('no-print');
+                }
+            };
+            
+            // Create a promise to ensure all fonts are loaded
+            const fontLoadPromise = document.fonts ? document.fonts.ready : Promise.resolve();
+            
+            fontLoadPromise.then(() => {
+                return html2canvas(element, opt);
+            }).then(canvas => {
+                // Show buttons again
+                buttons.forEach(btn => btn.style.display = '');
+                
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // Calculate image dimensions to fit A4
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Add first page
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                
+                const employeeName = document.getElementById('display-employee-name').textContent || 'employee';
+                const month = document.getElementById('display-month').textContent || 'slip';
+                pdf.save(`Salary_Slip_${employeeName}_${month}.pdf`);
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
+                buttons.forEach(btn => btn.style.display = '');
+            });
+        });
+    </script>
+</body>
+</html>
