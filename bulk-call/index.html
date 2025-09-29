@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bulk Voice Call</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+    input, button { padding: 10px; margin: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>📞 Bulk Voice Call System</h1>
+
+  <input type="file" id="csvFile" accept=".csv" />
+  <button onclick="uploadCSV()">Upload CSV & Call</button>
+
+  <p id="status"></p>
+
+  <script>
+    async function uploadCSV() {
+      const fileInput = document.getElementById('csvFile');
+      const status = document.getElementById('status');
+
+      if (!fileInput.files.length) {
+        status.innerText = "❗ Please select a CSV file.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      status.innerText = "⏳ Uploading & Calling...";
+
+      try {
+        const response = await fetch('http://localhost:3001/api/bulk-call', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        status.innerText = `✅ Calls attempted: ${result.success} success, ${result.failed} failed.`;
+        console.log(result.details);
+
+      } catch (error) {
+        status.innerText = `❌ Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TechnovaHub Bulk Email Sender</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-2xl mx-auto bg-white shadow-xl rounded-2xl p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">📧 TechnovaHub Bulk Email Sender</h1>
+    
+    <!-- Upload CSV -->
+    <label class="block mb-2 font-semibold">Upload CSV (Name, Email)</label>
+    <input type="file" id="csvFile" accept=".csv" class="mb-4 p-2 border rounded w-full">
+
+    <!-- Upload Attachment -->
+    <label class="block mb-2 font-semibold">Attachment (PDF / Image)</label>
+    <input type="file" id="attachment" class="mb-4 p-2 border rounded w-full">
+
+    <!-- Subject -->
+    <label class="block mb-2 font-semibold">Subject</label>
+    <input type="text" id="subject" class="mb-4 p-2 border rounded w-full">
+
+    <!-- Content -->
+    <label class="block mb-2 font-semibold">Message</label>
+    <textarea id="message" rows="5" class="mb-4 p-2 border rounded w-full"></textarea>
+
+    <!-- Schedule -->
+    <label class="block mb-2 font-semibold">Schedule Time</label>
+    <input type="datetime-local" id="scheduleTime" class="mb-4 p-2 border rounded w-full">
+
+    <!-- Send Button -->
+    <button id="sendBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full">
+      Schedule & Send Emails
+    </button>
+    
+    <p id="status" class="mt-4 text-center text-sm text-gray-700"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

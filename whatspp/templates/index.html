@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhatsApp Bulk Sender</title>
+</head>
+<body>
+  <h1>WhatsApp Bulk Message Sender</h1>
+  <form method="post" enctype="multipart/form-data">
+    <label>Template Name: </label>
+    <input type="text" name="template_name" required><br><br>
+
+    <label>Language Code: </label>
+    <input type="text" name="language" value="en_US" required><br><br>
+
+    <label>Upload CSV (phone,var1,var2...): </label>
+    <input type="file" name="csv_file" required><br><br>
+
+    <button type="submit">Send Messages</button>
+  </form>
+</body>
+</html>

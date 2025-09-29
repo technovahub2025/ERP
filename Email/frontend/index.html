@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Bulk Automation</title>
+</head>
+<body>
+  <h1>Email Bulk Automation</h1>
+
+  <form id="emailForm">
+    <label>Subject:</label><br>
+    <input type="text" name="subject" required><br><br>
+
+    <label>Message:</label><br>
+    <textarea name="message" rows="5" required></textarea><br><br>
+
+    <label>Upload CSV (with "email" column):</label><br>
+    <input type="file" name="file" accept=".csv" required><br><br>
+
+    <button type="submit">Send Emails</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    document.getElementById("emailForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      try {
+        const res = await fetch("http://localhost:5000/send-emails", {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await res.json();
+        document.getElementById("status").textContent = result.message || result.error;
+      } catch (err) {
+        document.getElementById("status").textContent = "Failed to send emails.";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

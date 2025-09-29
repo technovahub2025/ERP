@@ -1,0 +1,6 @@
+phone,response
+916379710109,"{'messaging_product': 'whatsapp', 'contacts': [{'input': '916379710109', 'wa_id': '916379710109'}], 'messages': [{'id': 'wamid.HBgMOTE2Mzc5NzEwMTA5FQIAERgSMDJGQzFERURBODA5MzZBNDU3AA==', 'message_status': 'accepted'}]}"
+919500558622,"{'messaging_product': 'whatsapp', 'contacts': [{'input': '919500558622', 'wa_id': '919500558622'}], 'messages': [{'id': 'wamid.HBgMOTE5NTAwNTU4NjIyFQIAERgSRTU0OUQyMzFERjNEN0FGNDk0AA==', 'message_status': 'accepted'}]}"
+919003530230,"{'messaging_product': 'whatsapp', 'contacts': [{'input': '919003530230', 'wa_id': '919003530230'}], 'messages': [{'id': 'wamid.HBgMOTE5MDAzNTMwMjMwFQIAERgSMkVFQzk3MjI4MzAyQjM4M0RDAA==', 'message_status': 'accepted'}]}"
+919500715761,"{'messaging_product': 'whatsapp', 'contacts': [{'input': '919500715761', 'wa_id': '919500715761'}], 'messages': [{'id': 'wamid.HBgMOTE5NTAwNzE1NzYxFQIAERgSQjlEQjBFRjE0OTZCNzhBNkYyAA==', 'message_status': 'accepted'}]}"
+918438431000,"{'messaging_product': 'whatsapp', 'contacts': [{'input': '918438431000', 'wa_id': '918438431000'}], 'messages': [{'id': 'wamid.HBgMOTE4NDM4NDMxMDAwFQIAERgSNTMyQzU4Mzg3MzlCREVGMTNGAA==', 'message_status': 'accepted'}]}"

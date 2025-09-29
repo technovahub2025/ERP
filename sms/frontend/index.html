@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulk SMS Sender</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-3xl">
+    <h1 class="text-2xl font-bold mb-6 text-center">📩 Bulk SMS Sender</h1>
+
+    <!-- Input form -->
+    <textarea id="numbers" rows="5" class="w-full p-3 border rounded mb-4"
+      placeholder="Enter phone numbers separated by commas"></textarea>
+    <textarea id="message" rows="4" class="w-full p-3 border rounded mb-4"
+      placeholder="Enter your message"></textarea>
+
+    <button onclick="sendSMS()" 
+      class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 w-full">
+      Send SMS
+    </button>
+
+    <!-- Results Table -->
+    <div id="results" class="mt-6 hidden">
+      <h2 class="text-xl font-semibold mb-3">📊 Results</h2>
+      <table class="w-full border-collapse border border-gray-300">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border p-2">Number</th>
+            <th class="border p-2">Status</th>
+            <th class="border p-2">Error</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    async function sendSMS() {
+      const numbersInput = document.getElementById("numbers").value;
+      const message = document.getElementById("message").value;
+
+      const numbers = numbersInput.split(",").map(num => num.trim()).filter(Boolean);
+
+      if (numbers.length === 0 || !message) {
+        alert("Please enter numbers and a message!");
+        return;
+      }
+
+      const response = await fetch("http://localhost:5000/send-sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numbers, message })
+      });
+
+      const data = await response.json();
+      const resultsDiv = document.getElementById("results");
+      const resultsBody = document.getElementById("resultsBody");
+
+      resultsDiv.classList.remove("hidden");
+      resultsBody.innerHTML = "";
+
+      data.results.forEach(r => {
+        resultsBody.innerHTML += `
+          <tr>
+            <td class="border p-2">${r.number}</td>
+            <td class="border p-2">${r.status}</td>
+            <td class="border p-2">${r.error ? r.error : "-"}</td>
+          </tr>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>
